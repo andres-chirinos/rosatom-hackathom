@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCN Bolivia - Equipo 22 Llama Atómica UMSA (Rosatom Hackathon)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0c10;
+            color: #e0e0e0;
+            scroll-behavior: smooth;
+        }
+        .hero-section {
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .hero-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        .section-title {
+            font-weight: 700;
+            font-size: 2rem; /* 32px */
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            color: #38bdf8; /* Azul claro Sky-400 */
+        }
+        @media (min-width: 768px) {
+            .section-title { font-size: 2.5rem; /* 40px */ }
+        }
+        .glassmorphism-nav {
+            background: rgba(12, 15, 23, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glassmorphism-card {
+            background: rgba(20, 25, 38, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .glassmorphism-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.15);
+        }
+        .cta-button {
+            background-color: #0ea5e9; /* Sky-500 */
+            color: #ffffff;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.25);
+        }
+        .cta-button:hover {
+            background-color: #0284c7; /* Sky-600 */
+            transform: translateY(-2px) scale(1.03);
+        }
+        .nav-link {
+            transition: color 0.3s ease, transform 0.2s ease;
+            position: relative;
+        }
+        .nav-link:hover { color: #38bdf8; transform: translateY(-1px); }
+        .nav-link::after {
+            content: ''; position: absolute; width: 0; height: 2px;
+            bottom: -4px; left: 50%; background-color: #38bdf8;
+            transition: width 0.3s ease, left 0.3s ease;
+        }
+        .nav-link:hover::after { width: 100%; left: 0; }
+
+        .expandable-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.7s ease-in-out, opacity 0.5s ease-in-out, padding 0.5s ease-in-out;
+            opacity: 0;
+            padding-left: 1rem; /* Indentación para el contenido expandido */
+        }
+        .expandable-content.open {
+            max-height: 2000px; /* Adjust as needed for maximum content */
+            opacity: 1;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+        .expand-button {
+            background-color: rgba(56, 189, 248, 0.15);
+            color: #7dd3fc; /* Sky-300 */
+            transition: background-color 0.3s ease;
+        }
+        .expand-button:hover { background-color: rgba(56, 189, 248, 0.3); }
+        .arrow-indicator { transition: transform 0.3s ease-in-out; }
+        .arrow-indicator.open { transform: rotate(180deg); }
+
+        #atom-canvas-container, #isotope-canvas-container {
+            width: 100%;
+            height: 300px; /* Adjust height as needed */
+            max-width: 500px; /* Limit width on larger screens */
+            margin: 1rem auto;
+            border-radius: 0.5rem;
+            background: #111827; /* Dark gray for canvas background */
+            cursor: grab;
+            overflow: hidden; /* Ensure canvas doesn't overflow */
+        }
+        #atom-canvas-container:grabbing, #isotope-canvas-container:grabbing { cursor: grabbing; }
+        #atom-canvas, #isotope-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .fade-in-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .section-animate { opacity: 0; } /* Will be animated by JS on scroll */
+        .loader {
+            border: 4px solid #38bdf8; /* Sky-400 */
+            border-top: 4px solid #0a0c10; /* Background color */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Message Box Styling */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #1a202c; /* Darker background */
+            color: #e0e0e0;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            max-width: 90%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+        }
+
+        /* Timeline specific styles */
+        .timeline-container {
+            position: relative;
+            padding: 0 1rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .timeline-container::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background-color: #38bdf8; /* Sky-400 */
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -2px;
+            z-index: 0;
+        }
+        .timeline-item {
+            padding: 10px 40px;
+            position: relative;
+            background-color: inherit;
+            width: 50%;
+        }
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            right: -14px;
+            background-color: #0a0c10; /* Body background */
+            border: 4px solid #38bdf8;
+            top: 15px;
+            border-radius: 50%;
+            z-index: 1;
+        }
+        .timeline-left {
+            left: 0;
+        }
+        .timeline-right {
+            left: 50%;
+        }
+        .timeline-left::before {
+            content: " ";
+            height: 0;
+            position: absolute;
+            top: 22px;
+            width: 0;
+            z-index: 1;
+            right: 30px;
+            border: medium solid white;
+            border-width: 10px 0 10px 10px;
+            border-color: transparent transparent transparent #1f2937; /* Glassmorphism card bg */
+        }
+        .timeline-right::before {
+            content: " ";
+            height: 0;
+            position: absolute;
+            top: 22px;
+            width: 0;
+            z-index: 1;
+            left: 30px;
+            border: medium solid white;
+            border-width: 10px 10px 10px 0;
+            border-color: transparent #1f2937 transparent transparent; /* Glassmorphism card bg */
+        }
+        .timeline-right::after {
+            left: -11px;
+        }
+        .timeline-content {
+            padding: 20px 30px;
+            background-color: rgba(20, 25, 38, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            position: relative;
+        }
+        @media screen and (max-width: 768px) {
+            .timeline-container::after {
+                left: 31px;
+            }
+            .timeline-item {
+                width: 100%;
+                padding-left: 70px;
+                padding-right: 25px;
+            }
+            .timeline-item::before {
+                left: 60px;
+                border: medium solid white;
+                border-width: 10px 10px 10px 0;
+                border-color: transparent #1f2937 transparent transparent;
+            }
+            .timeline-left::after, .timeline-right::after {
+                left: 18px;
+            }
+            .timeline-right {
+                left: 0%;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header id="main-header" class="fixed top-0 left-0 right-0 z-50 glassmorphism-nav">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex items-center justify-between h-16 md:h-20">
+                <a href="#" class="text-lg md:text-xl font-bold text-white flex items-center">
+                    <img src="https://placehold.co/40x40/38bdf8/0a0c10?text=LA22" alt="Logo Llama Atómica 22" class="mr-2 rounded-full h-8 w-8 md:h-9 md:w-9">
+                    Llama Atómica <span class="text-sky-400 ml-1">#22</span>
+                </a>
+                <div class="hidden md:flex space-x-5 lg:space-x-6">
+                    <a href="#inicio" class="nav-link text-gray-300 font-medium text-sm">Inicio</a>
+                    <a href="#pcn" class="nav-link text-gray-300 font-medium text-sm">PCN</a>
+                    <a href="#aplicaciones" class="nav-link text-gray-300 font-medium text-sm">Aplicaciones</a>
+                    <a href="#explorador" class="nav-link text-gray-300 font-medium text-sm">Explorador</a>
+                    <a href="#investigaciones" class="nav-link text-gray-300 font-medium text-sm">Investigaciones</a>
+                    <a href="#timeline" class="nav-link text-gray-300 font-medium text-sm">Línea de Tiempo</a>
+                    <a href="#isotope-simulation" class="nav-link text-gray-300 font-medium text-sm">Simulación Isótopos</a>
+                    <a href="#equipo" class="nav-link text-gray-300 font-medium text-sm">Equipo</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-300 hover:text-white focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+                    </button>
+                </div>
+            </nav>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden glassmorphism-nav py-2 border-t border-gray-700">
+            <a href="#inicio" class="block px-4 py-2 text-sm text-gray-200 hover:bg-sky-700/30 rounded-md mx-2">Inicio</a>
+            <a href="#pcn" class="block px-4 py-2 text-sm text-gray-200 hover:bg-sky-700/30 rounded-md mx-2">PCN</a>
+            <a href="#aplicaciones" class="block px-4 py-2 text-sm text-gray-200 hover:bg-sky-700/30 rounded-md mx-2">Aplicaciones</a>
+            <a href="#explorador" class="block px-4 py-2 text-sm text-gray-200 hover:bg-sky-700/30 rounded-md mx-2">Explorador IA</a>
+            <a href="#investigaciones" class="block px-4 py-2 text-sm text-gray-200 hover:bg-sky-700/30 rounded-md mx-2">Investigaciones</a>
+            <a href="#timeline" class="block px-4 py-2 text-sm text-gray-200 hover:bg-sky-700/30 rounded-md mx-2">Línea de Tiempo</a>
+            <a href="#isotope-simulation" class="block px-4 py-2 text-sm text-gray-200 hover:bg-sky-700/30 rounded-md mx-2">Simulación Isótopos</a>
+            <a href="#equipo" class="block px-4 py-2 text-sm text-gray-200 hover:bg-sky-700/30 rounded-md mx-2">Equipo</a>
+        </div>
+    </header>
+
+    <section id="inicio" class="hero-section min-h-screen flex flex-col items-center justify-center text-center pt-20 pb-10" style="background-image: url('https://placehold.co/1920x1080/0a0c10/1f2937?text=Bolivia+y+Tecnologia+Nuclear');">
+        <div class="hero-overlay"></div>
+        <div class="relative z-10 p-6 md:p-8 max-w-3xl mx-auto">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-tight mb-3 fade-in-up">
+                PCN Bolivia: Programa Científico Nuclear
+            </h1>
+            <p class="text-md sm:text-lg text-gray-200 mb-6 fade-in-up" style="animation-delay: 0.2s;">
+                Impulsando la soberanía científica y tecnológica para el desarrollo socioeconómico y la mejora de la calidad de vida en Bolivia.
+            </p>
+            <p class="text-sm text-sky-300 mb-8 fade-in-up" style="animation-delay: 0.3s;">Un proyecto de divulgación del Equipo <strong>Llama Atómica #22</strong> (UMSA) para el Hackathon Rosatom.</p>
+
+            <div id="atom-canvas-container" class="fade-in-up" style="animation-delay: 0.4s;">
+                <canvas id="atom-canvas"></canvas>
+            </div>
+            <p class="text-sm text-gray-400 mt-2 mb-6 fade-in-up" style="animation-delay: 0.5s;">
+                <strong>Explora el Átomo ⚛️</strong> Haz clic y arrastra para rotar el modelo 3D.
+            </p>
+
+            <div class="bg-gray-800/70 p-4 rounded-lg mt-6 max-w-md mx-auto fade-in-up" style="animation-delay: 0.7s;">
+                <h3 class="text-lg font-semibold text-sky-300 mb-3">Control del Átomo</h3>
+                <div class="grid grid-cols-3 gap-3 mb-4 text-left">
+                    <div>
+                        <label for="protons-input" class="block text-gray-300 text-sm font-medium mb-1">Protones:</label>
+                        <input type="number" id="protons-input" value="92" min="0" class="w-full p-2 rounded-md bg-gray-700 border border-gray-600 text-white text-sm focus:ring-sky-500 focus:border-sky-500 outline-none">
+                    </div>
+                    <div>
+                        <label for="neutrons-input" class="block text-gray-300 text-sm font-medium mb-1">Neutrones:</label>
+                        <input type="number" id="neutrons-input" value="146" min="0" class="w-full p-2 rounded-md bg-gray-700 border border-gray-600 text-white text-sm focus:ring-sky-500 focus:border-sky-500 outline-none">
+                    </div>
+                    <div>
+                        <label for="electrons-input" class="block text-gray-300 text-sm font-medium mb-1">Electrones:</label>
+                        <input type="number" id="electrons-input" value="92" min="0" class="w-full p-2 rounded-md bg-gray-700 border border-gray-600 text-white text-sm focus:ring-sky-500 focus:border-sky-500 outline-none">
+                    </div>
+                </div>
+                <button id="update-atom-btn" class="cta-button font-semibold py-2 px-5 rounded-md text-sm w-full">
+                    Actualizar Átomo
+                </button>
+                <div id="element-name-output" class="text-lg font-bold text-sky-300 mt-4">Elemento: Uranio (U)</div>
+
+                <div class="mt-4 text-left">
+                    <h4 class="text-md font-semibold text-sky-300 mb-2">Seleccionar Elemento:</h4>
+                    <ul id="element-list" class="list-disc list-inside text-gray-300 text-xs max-h-48 overflow-y-auto bg-gray-700/50 p-3 rounded-md">
+                        </ul>
+                    <p class="text-gray-500 text-xs mt-2">Nota: Esta es una representación visual simplificada. Los protones y neutrones forman el núcleo, y los electrones existen en orbitales probabilísticos.</p>
+                </div>
+            </div>
+
+            <a href="#pcn" class="cta-button font-semibold py-2 px-6 md:py-3 md:px-8 rounded-lg text-base md:text-lg fade-in-up mt-8" style="animation-delay: 0.8s;">
+                Conoce el PCN
+            </a>
+        </div>
+    </section>
+
+    <section id="pcn" class="py-12 sm:py-16 bg-gray-900 section-animate">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glassmorphism-card p-6 md:p-8 rounded-lg">
+                <h2 class="section-title mb-4">1. Planificación del PCN</h2>
+                <p class="text-gray-300 mb-4 text-sm md:text-base">
+                    El Programa Científico Nuclear (PCN) de Bolivia se enmarca en un sólido andamiaje legal y estratégico, buscando la soberanía científica y tecnológica para el beneficio de la sociedad boliviana.
+                </p>
+                <div class="expandable-content" id="pcn-details">
+                    <p class="text-gray-300 text-sm md:text-base">La planificación del PCN es un proceso meticuloso que integra la visión a largo plazo del desarrollo nacional con las capacidades técnicas y científicas disponibles. Se fundamenta en un sólido marco legal que garantiza la seguridad, la transparencia y el uso pacífico de la energía nuclear. Los objetivos estratégicos incluyen la diversificación de la matriz energética, la mejora de la salud pública a través de la medicina nuclear, el incremento de la productividad agrícola mediante técnicas isotópicas, y la protección del medio ambiente a través de la investigación y monitoreo. La asignación de recursos se realiza de manera eficiente, priorizando la inversión en infraestructura de vanguardia y la formación de capital humano altamente especializado. Además, se establecen rigurosos marcos regulatorios en línea con los estándares internacionales del Organismo Internacional de Energía Atómica (OIEA) para asegurar la operación segura de todas las instalaciones nucleares. La colaboración con instituciones nacionales e internacionales, como Rosatom, es fundamental para el intercambio de conocimientos, la transferencia de tecnología y el fortalecimiento de las capacidades locales, asegurando la sostenibilidad y el impacto positivo del programa en el desarrollo socioeconómico de Bolivia.</p>
+                </div>
+                <button class="expand-button text-sm font-medium py-2 px-4 rounded-md mt-3 flex items-center" data-target="pcn-details">
+                    Leer más <span class="arrow-indicator ml-2">&#9662;</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section id="aplicaciones" class="py-12 sm:py-16 section-animate">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glassmorphism-card p-6 md:p-8 rounded-lg">
+                <h2 class="section-title mb-4">2. Servicios y Aplicaciones del PCN</h2>
+                <p class="text-gray-300 mb-4 text-sm md:text-base">
+                    El PCN de Bolivia abarca una amplia gama de aplicaciones pacíficas de la tecnología nuclear, con proyectos clave que impactan directamente en la salud, la alimentación, el medio ambiente y el desarrollo industrial.
+                </p>
+                <div class="expandable-content" id="aplicaciones-details">
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-xl font-semibold text-sky-300 mb-2">Salud y Medicina Nuclear</h3>
+                            <p class="text-gray-300 text-sm md:text-base mb-2">La medicina nuclear utiliza pequeñas cantidades de material radiactivo (radiofármacos) para diagnosticar y tratar enfermedades. En Bolivia, el PCN impulsa:</p>
+                            <ul class="list-disc list-inside text-gray-300 space-y-1 text-sm md:text-base ml-4">
+                                <li><strong>Diagnóstico por Imagen Avanzado:</strong> Equipos de PET/CT (Tomografía por Emisión de Positrones/Tomografía Computarizada) y SPECT (Tomografía Computarizada por Emisión de Fotón Único) permiten la detección temprana y precisa de enfermedades como el cáncer, trastornos cardíacos y neurológicos, mucho antes de que se manifiesten estructuralmente. Esto mejora significativamente las tasas de éxito en el tratamiento.</li>
+                                <li><strong>Tratamiento Oncológico Especializado:</strong> La radioterapia externa (con aceleradores lineales) y la braquiterapia (fuentes radiactivas internas) ofrecen tratamientos altamente focalizados para combatir células cancerosas, minimizando el daño a los tejidos sanos circundantes. Esto representa una esperanza crucial para pacientes con cáncer en el país.</li>
+                                <li><strong>Irradiación de Hemocomponentes:</strong> Un proceso vital para la seguridad transfusional. La irradiación reduce el riesgo de reacciones adversas y enfermedades transmitidas por transfusión, especialmente en pacientes inmunocomprometidos, al inactivar linfocitos que podrían causar la enfermedad de injerto contra huésped.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-sky-300 mb-2">Agricultura y Seguridad Alimentaria</h3>
+                            <p class="text-gray-300 text-sm md:text-base mb-2">La tecnología nuclear ofrece herramientas innovadoras para mejorar la productividad agrícola y garantizar la seguridad alimentaria:</p>
+                            <ul class="list-disc list-inside text-gray-300 space-y-1 text-sm md:text-base ml-4">
+                                <li><strong>Análisis por Activación Neutrónica (AAN):</strong> Permite determinar con gran precisión la composición de nutrientes en suelos y cultivos, optimizando el uso de fertilizantes y reduciendo costos. También se usa para detectar contaminantes.</li>
+                                <li><strong>Gestión de Recursos Hídricos:</strong> Las técnicas isotópicas permiten rastrear el movimiento del agua en acuíferos y sistemas hídricos, proporcionando datos cruciales para la gestión sostenible de este recurso vital y la identificación de fuentes de contaminación.</li>
+                                <li><strong>Mejoramiento Genético y Control de Plagas:</strong> La irradiación de semillas puede inducir mutaciones que resultan en cultivos más resistentes a enfermedades, sequías o plagas, y con mayor rendimiento. La Técnica del Insecto Estéril (TIE) utiliza la irradiación para esterilizar insectos plaga, liberándolos para que se apareen sin descendencia, reduciendo así las poblaciones de plagas de forma ecológica.</li>
+                                <li><strong>Conservación de Alimentos:</strong> La irradiación de alimentos prolonga su vida útil al reducir la carga microbiana (bacterias, hongos) y prevenir la germinación o maduración excesiva. Esto disminuye las pérdidas post-cosecha y mejora la seguridad alimentaria.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-sky-300 mb-2">Industria, Minería y Medio Ambiente</h3>
+                            <p class="text-gray-300 text-sm md:text-base mb-2">La tecnología nuclear también tiene aplicaciones críticas en sectores industriales y para la protección ambiental:</p>
+                            <ul class="list-disc list-inside text-gray-300 space-y-1 text-sm md:text-base ml-4">
+                                <li><strong>Ensayos No Destructivos (END):</strong> Técnicas como la radiografía industrial utilizan fuentes radiactivas para inspeccionar la integridad de materiales, soldaduras y componentes sin dañarlos, crucial para la seguridad en la construcción, petróleo y gas, y manufactura.</li>
+                                <li><strong>Medición Industrial:</strong> Los medidores nucleares se utilizan para controlar niveles, densidades y flujos en procesos industriales, mejorando la eficiencia, la calidad del producto y reduciendo el desperdicio.</li>
+                                <li><strong>Prospección de Uranio y Torio:</strong> La tecnología nuclear es fundamental para la identificación y evaluación de yacimientos de minerales radiactivos, asegurando el suministro de combustible para futuros desarrollos energéticos.</li>
+                                <li><strong>Análisis Ambiental:</strong> Las técnicas nucleares permiten monitorear la contaminación del aire, agua y suelo, identificar fuentes de contaminación y evaluar el impacto ambiental, contribuyendo a la protección de los ecosistemas bolivianos.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-sky-300 mb-2">Potencialidades y Beneficios</h3>
+                            <ul class="list-disc list-inside text-gray-300 space-y-1 text-sm md:text-base ml-4">
+                                <li><strong>Impulso a la industrialización:</strong> Fomenta la creación de industrias de alto valor añadido y la sustitución de importaciones en áreas clave.</li>
+                                <li><strong>Soberanía científica y tecnológica:</strong> Reduce la dependencia externa y fortalece las capacidades de investigación y desarrollo propias.</li>
+                                <li><strong>Mejora de la calidad de vida:</strong> Impacto directo en la salud de la población, la seguridad alimentaria y la protección del medio ambiente.</li>
+                                <li><strong>Generación de conocimiento y tecnología:</strong> Estimula la investigación, el desarrollo de patentes y la innovación.</li>
+                                <li><strong>Seguridad energética y alimentaria:</strong> Contribuye a la estabilidad del suministro de energía y alimentos.</li>
+                                <li><strong>Desarrollo de capacidades nacionales y formación de talento humano:</strong> Crea oportunidades para profesionales bolivianos en campos de alta tecnología.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <button class="expand-button text-sm font-medium py-2 px-4 rounded-md mt-3 flex items-center" data-target="aplicaciones-details">
+                    Leer más <span class="arrow-indicator ml-2">&#9662;</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section id="gestion" class="py-12 sm:py-16 bg-gray-900 section-animate">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glassmorphism-card p-6 md:p-8 rounded-lg">
+                <h2 class="section-title mb-4">3. Gestión Institucional y Transparencia</h2>
+                <p class="text-gray-300 mb-4 text-sm md:text-base">
+                    La gestión del PCN se rige por principios de eficiencia, transparencia y rendición de cuentas, asegurando el uso responsable y seguro de la tecnología nuclear.
+                </p>
+                <div class="expandable-content" id="gestion-details">
+                    <p class="text-gray-300 text-sm md:text-base">Esto implica la implementación de sistemas de monitoreo y evaluación continuos, auditorías periódicas, y la publicación de informes de avance y resultados. Se promueve la participación ciudadana y el acceso a la información para fortalecer la confianza pública en el programa. La Agencia Boliviana de Energía Nuclear (ABEN) juega un rol crucial en esta gestión, coordinando esfuerzos y velando por el cumplimiento de las normativas nacionales e internacionales de seguridad nuclear.</p>
+                </div>
+                <button class="expand-button text-sm font-medium py-2 px-4 rounded-md mt-3 flex items-center" data-target="gestion-details">
+                    Leer más <span class="arrow-indicator ml-2">&#9662;</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section id="explorador" class="py-12 sm:py-16 section-animate">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glassmorphism-card p-6 md:p-8 rounded-lg text-center">
+                <h2 class="section-title mb-2">Explorador Nuclear ✨</h2>
+                <p class="text-gray-300 mb-5 text-sm md:text-base max-w-xl mx-auto">¿Tienes curiosidad sobre algún concepto en ciencia nuclear? Introduce el término y nuestro asistente de IA te proporcionará una explicación sencilla.</p>
+                <div class="max-w-lg mx-auto">
+                    <input type="text" id="concepto-nuclear-input" class="w-full p-3 rounded-md bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm" placeholder="Ej: Fisión nuclear, Radioisótopo, Reactor...">
+                    <button id="explicar-concepto-btn" class="cta-button font-semibold py-2 px-5 rounded-md text-sm mt-4">
+                        Explicar Concepto ✨
+                    </button>
+                </div>
+                <div id="ai-explanation-loader" class="hidden loader mt-5"></div>
+                <div id="ai-explanation-output" class="mt-5 text-left text-gray-300 bg-gray-800/50 p-4 rounded-md text-sm md:text-base hidden"></div>
+                 <div id="ai-explanation-error" class="mt-5 text-left text-red-400 bg-red-900/30 p-4 rounded-md text-sm md:text-base hidden"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="investigaciones" class="py-12 sm:py-16 bg-gray-900 section-animate">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glassmorphism-card p-6 md:p-8 rounded-lg">
+                <h2 class="section-title mb-4">Buscador de Investigaciones 🔍</h2>
+                <p class="text-gray-300 mb-5 text-sm md:text-base">Para buscar artículos científicos y publicaciones relevantes, por favor, introduce tu consulta a continuación. Luego, haz clic en "Buscar Investigaciones" para copiar la consulta y pégala en el chat para que nuestro asistente de IA realice la búsqueda por ti.</p>
+                
+                <div class="max-w-lg mx-auto mb-6">
+                    <input type="text" id="investigacion-query-input" class="w-full p-3 rounded-md bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm" placeholder="Ej: Fusión nuclear avances, Medicina nuclear Bolivia...">
+                    <button id="buscar-investigacion-btn" class="cta-button font-semibold py-2 px-5 rounded-md text-sm mt-4">
+                        Buscar Investigaciones
+                    </button>
+                </div>
+
+                <div id="investigacion-results-output" class="mt-5 text-left space-y-4">
+                    <p class="text-gray-400 text-sm">Los resultados de la búsqueda aparecerán en el chat.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="timeline" class="py-12 sm:py-16 section-animate">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glassmorphism-card p-6 md:p-8 rounded-lg">
+                <h2 class="section-title mb-8 text-center">Línea de Tiempo del Desarrollo Nuclear ⏳</h2>
+                <div class="timeline-container">
+                    <div class="timeline-item timeline-left">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">1896: Descubrimiento de la Radiactividad</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Henri Becquerel descubre accidentalmente la radiactividad natural del uranio, marcando el inicio de la era nuclear.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-right">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">1938: Fisión Nuclear</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Otto Hahn y Fritz Strassmann descubren la fisión nuclear del uranio, un proceso clave para la energía atómica.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-left">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">1942: Primer Reactor Nuclear</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Enrico Fermi y su equipo logran la primera reacción nuclear en cadena autosostenida en Chicago Pile-1.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-right">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">1954: Primera Central Nuclear Comercial</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">La URSS inaugura la central nuclear de Obninsk, la primera en generar electricidad a escala comercial.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-left">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">1957: Creación del OIEA</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Se establece el Organismo Internacional de Energía Atómica (OIEA) para promover el uso pacífico de la energía nuclear.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-right">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">1960: Fundación de COBOEN</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Se funda la Comisión Boliviana de Energía Nuclear (COBOEN), marcando el inicio de la institucionalización nuclear en Bolivia.</p>
+                        </div>
+                    </div>
+                     <div class="timeline-item timeline-left">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">2014-2015: Acuerdos con Rosatom</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Bolivia inicia conversaciones y firma acuerdos clave con la corporación rusa Rosatom para el desarrollo de tecnología nuclear con fines pacíficos.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-right">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">2016: Creación de ABEN</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Se crea la Agencia Boliviana de Energía Nuclear (ABEN), consolidando la entidad encargada de la implementación del Programa Nuclear Boliviano.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-left">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">2017: Inicio del PCN y CIDTN en Bolivia</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Bolivia inicia la construcción del Centro de Investigación y Desarrollo en Tecnología Nuclear (CIDTN) en El Alto, un hito para el PCN y la aplicación de la energía nuclear con fines pacíficos.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-right">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">2019: Ratificación del TPAN</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Bolivia ratifica el Tratado sobre la Prohibición de las Armas Nucleares (TPAN), reafirmando su compromiso con el desarme nuclear global.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-left">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">2021: Inicio Construcción Reactor de Investigación</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Comienza el vertido del primer hormigón para el Reactor Nuclear de Investigación (RNI) en El Alto, la parte más compleja del CIDTN.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-right">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">2023: Puesta en Marcha Complejo Ciclotrón y Llegada Vaso Reactor</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">El Complejo Ciclotrón Preclínico y Radiofarmacia entra en operación. Además, llega a Bolivia el vaso del Reactor Nuclear de Investigación, marcando el inicio de la fase de montaje de equipos.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-left">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">2024: Investigación en Medicina Nuclear y Colaboración OIEA</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Investigación en medicina nuclear y colaboración continua con el OIEA en seguridad y capacitación, fortaleciendo las capacidades nacionales.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item timeline-right">
+                        <div class="timeline-content">
+                            <h3 class="mb-2 font-bold text-sky-300 text-lg">2025: Proyección de Operación del RNI</h3>
+                            <p class="text-sm leading-snug tracking-wide text-gray-300">Se prevé que el Reactor Nuclear de Investigación comience a funcionar en julio de 2025, coincidiendo con el Bicentenario de Bolivia, marcando un hito tecnológico y de soberanía. [Image of Un reactor nuclear en funcionamiento, simbolizando el futuro de la energía]</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="isotope-simulation" class="py-12 sm:py-16 section-animate">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glassmorphism-card p-6 md:p-8 rounded-lg text-center">
+                <h2 class="section-title mb-4">Simulación de Isótopos 🧪</h2>
+                <p class="text-gray-300 mb-5 text-sm md:text-base max-w-xl mx-auto">Explora cómo los isótopos se utilizan en diferentes aplicaciones.</p>
+                
+                <div class="flex justify-center space-x-4 mb-6">
+                    <button id="medical-isotope-btn" class="cta-button font-semibold py-2 px-4 rounded-md text-sm">
+                        Aplicación Médica
+                    </button>
+                    <button id="agricultural-isotope-btn" class="cta-button font-semibold py-2 px-4 rounded-md text-sm">
+                        Aplicación Agrícola
+                    </button>
+                    <button id="mining-isotope-btn" class="cta-button font-semibold py-2 px-4 rounded-md text-sm">
+                        Aplicación Minera
+                    </button>
+                </div>
+
+                <div id="isotope-canvas-container">
+                    <canvas id="isotope-canvas"></canvas>
+                </div>
+                <p id="isotope-scenario-text" class="text-sm text-gray-400 mt-2">Selecciona una aplicación para ver la simulación.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="equipo" class="py-12 sm:py-16 bg-gray-900 section-animate">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glassmorphism-card p-6 md:p-8 rounded-lg text-center">
+                <h2 class="section-title mb-4">Nuestro Equipo 🧑‍🔬 Llama Atómica #22</h2>
+                <p class="text-gray-300 mb-8 text-sm md:text-base max-w-2xl mx-auto">
+                    Somos el Equipo <strong>Llama Atómica #22</strong> de la Universidad Mayor de San Andrés (UMSA), comprometidos con la innovación y la divulgación científica en el marco del Hackathon Rosatom.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="glassmorphism-card p-5 rounded-lg text-center">
+                        <img src="https://placehold.co/100x100/38bdf8/0a0c10?text=AC" alt="Andrés Chirinos" class="rounded-full w-24 h-24 mx-auto mb-4 border-2 border-sky-400">
+                        <h3 class="text-lg font-semibold text-white">Andrés Chirinos</h3>
+                        <p class="text-sky-300 text-sm">Estudiante de Estadística</p>
+                        <p class="text-gray-400 text-xs mt-2">Miembro de la sociedad científica de estudiantes de estadística, aporta análisis de datos cruciales.</p>
+                    </div>
+                    <div class="glassmorphism-card p-5 rounded-lg text-center">
+                        <img src="https://placehold.co/100x100/38bdf8/0a0c10?text=RC" alt="Ricardo Cuenca" class="rounded-full w-24 h-24 mx-auto mb-4 border-2 border-sky-400">
+                        <h3 class="text-lg font-semibold text-white">Ricardo Cuenca</h3>
+                        <p class="text-sky-300 text-sm">Estudiante de Informática</p>
+                        <p class="text-gray-400 text-xs mt-2">Experto en desarrollo de software y soluciones tecnológicas para el proyecto.</p>
+                    </div>
+                    <div class="glassmorphism-card p-5 rounded-lg text-center">
+                        <img src="https://placehold.co/100x100/38bdf8/0a0c10?text=FC" alt="Fabián Caballero" class="rounded-full w-24 h-24 mx-auto mb-4 border-2 border-sky-400">
+                        <h3 class="text-lg font-semibold text-white">Fabián Caballero</h3>
+                        <p class="text-sky-300 text-sm">Estudiante de Estadística</p>
+                        <p class="text-gray-400 text-xs mt-2">Colabora en la interpretación de datos y modelado estadístico.</p>
+                    </div>
+                    <div class="glassmorphism-card p-5 rounded-lg text-center">
+                        <img src="https://placehold.co/100x100/38bdf8/0a0c10?text=JT" alt="José Tarqui" class="rounded-full w-24 h-24 mx-auto mb-4 border-2 border-sky-400">
+                        <h3 class="text-lg font-semibold text-white">José Tarqui</h3>
+                        <p class="text-sky-300 text-sm">Estudiante de Estadística</p>
+                        <p class="text-gray-400 text-xs mt-2">Contribuye con su conocimiento en recolección y organización de información.</p>
+                    </div>
+                    <div class="glassmorphism-card p-5 rounded-lg text-center">
+                        <img src="https://placehold.co/100x100/38bdf8/0a0c10?text=KB" alt="Kevin Barrientos" class="rounded-full w-24 h-24 mx-auto mb-4 border-2 border-sky-400">
+                        <h3 class="text-lg font-semibold text-white">Kevin Barrientos</h3>
+                        <p class="text-sky-300 text-sm">Estudiante de Estadística</p>
+                        <p class="text-gray-400 text-xs mt-2">Apoya en la validación y presentación de resultados estadísticos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-gray-950 py-8 text-center text-gray-400 text-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <p>&copy; 2025 Llama Atómica #22 UMSA. Todos los derechos reservados.</p>
+            <p class="mt-2">Proyecto para el Hackathon Rosatom.</p>
+        </div>
+    </footer>
+
+    <div id="message-box-overlay" class="message-box-overlay hidden"></div>
+    <div id="message-box" class="message-box hidden">
+        <p id="message-box-text" class="mb-4"></p>
+        <button class="cta-button" id="message-box-close">Cerrar</button>
+    </div>
+
+    <script>
+        // Global variables for Canvas environment (MUST BE USED)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- Helper function for custom message box ---
+        function showMessageBox(message) {
+            const messageBox = document.getElementById('message-box');
+            const messageBoxOverlay = document.getElementById('message-box-overlay');
+            const messageBoxText = document.getElementById('message-box-text');
+            const messageBoxCloseBtn = document.getElementById('message-box-close');
+
+            messageBoxText.textContent = message;
+            messageBox.classList.remove('hidden');
+            messageBoxOverlay.classList.remove('hidden');
+
+            const closeMessageBox = () => {
+                messageBox.classList.add('hidden');
+                messageBoxOverlay.classList.add('hidden');
+                messageBoxCloseBtn.removeEventListener('click', closeMessageBox);
+                messageBoxOverlay.removeEventListener('click', closeMessageBox);
+            };
+            messageBoxCloseBtn.addEventListener('click', closeMessageBox);
+            messageBoxOverlay.addEventListener('click', closeMessageBox); // Close on overlay click
+        }
+
+        // --- Mobile Menu Toggle ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const header = document.getElementById('main-header'); // Get the header element
+
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+
+                // Close mobile menu when a link is clicked
+                mobileMenu.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        mobileMenu.classList.add('hidden');
+                    });
+                });
+            }
+
+            // --- Smooth Scroll with Offset for Fixed Header ---
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+
+                    if (targetElement) {
+                        const headerOffset = header.offsetHeight; // Get dynamic header height
+                        const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+                        const offsetPosition = elementPosition - headerOffset;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: "smooth"
+                        });
+                    }
+                });
+            });
+
+
+            // --- Expandable Content Logic ---
+            document.querySelectorAll('.expand-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.dataset.target;
+                    const targetContent = document.getElementById(targetId);
+                    const arrowIndicator = button.querySelector('.arrow-indicator');
+
+                    if (targetContent && arrowIndicator) {
+                        targetContent.classList.toggle('open');
+                        arrowIndicator.classList.toggle('open');
+                        button.innerHTML = targetContent.classList.contains('open') ?
+                            `Leer menos <span class="arrow-indicator ml-2 open">&#9662;</span>` :
+                            `Leer más <span class="arrow-indicator ml-2">&#9662;</span>`;
+                    }
+                });
+            });
+
+            // --- Section Scroll Animation (Fade In Up) ---
+            const sections = document.querySelectorAll('.section-animate');
+            const observerOptions = {
+                root: null, // viewport
+                rootMargin: '0px',
+                threshold: 0.1 // 10% of the section must be visible
+            };
+
+            const sectionObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('fade-in-up');
+                        observer.unobserve(entry.target); // Stop observing once animated
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                sectionObserver.observe(section);
+            });
+
+            // --- Three.js Atom Model ---
+            const atomCanvasContainer = document.getElementById('atom-canvas-container');
+            const atomCanvas = document.getElementById('atom-canvas');
+            let atomScene, atomCamera, atomRenderer;
+            let nucleusGroup; // Group to hold protons and neutrons
+            let electrons = []; // Array to hold electron meshes
+            let isAtomDragging = false;
+            let atomPreviousMousePosition = { x: 0, y: 0 };
+
+            // Atom control inputs
+            const protonsInput = document.getElementById('protons-input');
+            const neutronsInput = document.getElementById('neutrons-input');
+            const electronsInput = document.getElementById('electrons-input');
+            const updateAtomBtn = document.getElementById('update-atom-btn');
+            const elementNameOutput = document.getElementById('element-name-output');
+            const elementList = document.getElementById('element-list');
+
+            // Periodic table data (simplified for common elements)
+            const periodicTable = {
+                1: { name: "Hidrógeno", symbol: "H", neutrons: 0, electrons: 1 },
+                2: { name: "Helio", symbol: "He", neutrons: 2, electrons: 2 },
+                3: { name: "Litio", symbol: "Li", neutrons: 4, electrons: 3 },
+                4: { name: "Berilio", symbol: "Be", neutrons: 5, electrons: 4 },
+                5: { name: "Boro", symbol: "B", neutrons: 6, electrons: 5 },
+                6: { name: "Carbono", symbol: "C", neutrons: 6, electrons: 6 },
+                7: { name: "Nitrógeno", symbol: "N", neutrons: 7, electrons: 7 },
+                8: { name: "Oxígeno", symbol: "O", neutrons: 8, electrons: 8 },
+                9: { name: "Flúor", symbol: "F", neutrons: 10, electrons: 9 },
+                10: { name: "Neón", symbol: "Ne", neutrons: 10, electrons: 10 },
+                11: { name: "Sodio", symbol: "Na", neutrons: 12, electrons: 11 },
+                12: { name: "Magnesio", symbol: "Mg", neutrons: 12, electrons: 12 },
+                13: { name: "Aluminio", symbol: "Al", neutrons: 14, electrons: 13 },
+                14: { name: "Silicio", symbol: "Si", neutrons: 14, electrons: 14 },
+                15: { name: "Fósforo", symbol: "P", neutrons: 16, electrons: 15 },
+                16: { name: "Azufre", symbol: "S", neutrons: 16, electrons: 16 },
+                17: { name: "Cloro", symbol: "Cl", neutrons: 18, electrons: 17 },
+                18: { name: "Argón", symbol: "Ar", neutrons: 22, electrons: 18 },
+                19: { name: "Potasio", symbol: "K", neutrons: 20, electrons: 19 },
+                20: { name: "Calcio", symbol: "Ca", neutrons: 20, electrons: 20 },
+                26: { name: "Hierro", symbol: "Fe", neutrons: 30, electrons: 26 },
+                79: { name: "Oro", symbol: "Au", neutrons: 118, electrons: 79 },
+                92: { name: "Uranio", symbol: "U", neutrons: 146, electrons: 92 }
+            };
+
+            // Function to populate the element list
+            function populateElementList() {
+                elementList.innerHTML = ''; // Clear existing
+                Object.keys(periodicTable).forEach(atomicNumber => {
+                    const element = periodicTable[atomicNumber];
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('cursor-pointer', 'hover:text-sky-300', 'py-1');
+                    listItem.textContent = `${element.name} (${element.symbol}): ${atomicNumber} Protón(es), ${element.neutrons} Neutrón(es), ${element.electrons} Electrón(es)`;
+                    listItem.dataset.protons = atomicNumber;
+                    listItem.dataset.neutrons = element.neutrons;
+                    listItem.dataset.electrons = element.electrons;
+                    elementList.appendChild(listItem);
+                });
+            }
+
+
+            function initAtomModel() {
+                // Scene
+                atomScene = new THREE.Scene();
+
+                // Camera
+                atomCamera = new THREE.PerspectiveCamera(75, atomCanvasContainer.clientWidth / atomCanvasContainer.clientHeight, 0.1, 1000);
+                atomCamera.position.z = 5;
+
+                // Renderer
+                atomRenderer = new THREE.WebGLRenderer({ canvas: atomCanvas, antialias: true, alpha: true });
+                atomRenderer.setSize(atomCanvasContainer.clientWidth, atomCanvasContainer.clientHeight);
+                atomRenderer.setPixelRatio(window.devicePixelRatio);
+                atomRenderer.setClearColor(0x000000, 0); // Transparent background
+
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+                atomScene.add(ambientLight);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+                directionalLight.position.set(1, 1, 1).normalize();
+                atomScene.add(directionalLight);
+
+                // Event Listeners for rotation
+                atomCanvasContainer.addEventListener('mousedown', onAtomMouseDown);
+                atomCanvasContainer.addEventListener('mousemove', onAtomMouseMove);
+                atomCanvasContainer.addEventListener('mouseup', onAtomMouseUp);
+                atomCanvasContainer.addEventListener('mouseleave', onAtomMouseUp); // Stop dragging if mouse leaves container
+
+                // Touch events for mobile
+                atomCanvasContainer.addEventListener('touchstart', onAtomTouchStart, { passive: false });
+                atomCanvasContainer.addEventListener('touchmove', onAtomTouchMove, { passive: false });
+                atomCanvasContainer.addEventListener('touchend', onAtomTouchEnd);
+                atomCanvasContainer.addEventListener('touchcancel', onAtomTouchEnd);
+
+                window.addEventListener('resize', onAtomWindowResize);
+
+                // Initial update of atom model based on default inputs
+                updateAtomModel();
+            }
+
+            function onAtomWindowResize() {
+                // Adjust camera aspect ratio and renderer size on window resize
+                atomCamera.aspect = atomCanvasContainer.clientWidth / atomCanvasContainer.clientHeight;
+                atomCamera.updateProjectionMatrix();
+                atomRenderer.setSize(atomCanvasContainer.clientWidth, atomCanvasContainer.clientHeight);
+            }
+
+            function onAtomMouseDown(event) {
+                isAtomDragging = true;
+                atomCanvasContainer.style.cursor = 'grabbing';
+                atomPreviousMousePosition = {
+                    x: event.clientX,
+                    y: event.clientY
+                };
+            }
+
+            function onAtomMouseMove(event) {
+                if (!isAtomDragging) return;
+
+                const deltaX = event.clientX - atomPreviousMousePosition.x;
+                const deltaY = event.clientY - atomPreviousMousePosition.y;
+
+                // Rotate the entire scene based on mouse movement
+                atomScene.rotation.y += deltaX * 0.01;
+                atomScene.rotation.x += deltaY * 0.01;
+
+                atomPreviousMousePosition = {
+                    x: event.clientX,
+                    y: event.clientY
+                };
+            }
+
+            function onAtomMouseUp() {
+                isAtomDragging = false;
+                atomCanvasContainer.style.cursor = 'grab';
+            }
+
+            function onAtomTouchStart(event) {
+                if (event.touches.length === 1) {
+                    isAtomDragging = true;
+                    atomCanvasContainer.style.cursor = 'grabbing';
+                    atomPreviousMousePosition = {
+                        x: event.touches[0].clientX,
+                        y: event.touches[0].clientY
+                    };
+                    event.preventDefault(); // Prevent scrolling
+                }
+            }
+
+            function onAtomTouchMove(event) {
+                if (!isAtomDragging || event.touches.length !== 1) return;
+
+                const deltaX = event.touches[0].clientX - atomPreviousMousePosition.x;
+                const deltaY = event.touches[0].clientY - atomPreviousMousePosition.y;
+
+                atomScene.rotation.y += deltaX * 0.01;
+                atomScene.rotation.x += deltaY * 0.01;
+
+                atomPreviousMousePosition = {
+                    x: event.touches[0].clientX,
+                    y: event.touches[0].clientY
+                };
+                event.preventDefault(); // Prevent scrolling
+            }
+
+            function onAtomTouchEnd() {
+                isAtomDragging = false;
+                atomCanvasContainer.style.cursor = 'grab';
+            }
+
+            // Function to create a single nucleon (proton or neutron)
+            function createNucleon(color, radius = 0.15) {
+                const geometry = new THREE.SphereGeometry(radius, 16, 16);
+                const material = new THREE.MeshBasicMaterial({ color: color });
+                return new THREE.Mesh(geometry, material);
+            }
+
+            // Function to update the atom model
+            function updateAtomModel() {
+                let currentProtons = parseInt(protonsInput.value);
+                let currentNeutrons = parseInt(neutronsInput.value);
+                let currentElectrons = parseInt(electronsInput.value);
+
+                // Validate inputs
+                if (isNaN(currentProtons) || currentProtons < 0) currentProtons = 0;
+                if (isNaN(currentNeutrons) || currentNeutrons < 0) currentNeutrons = 0;
+                if (isNaN(currentElectrons) || currentElectrons < 0) currentElectrons = 0;
+
+                // Ensure at least one proton for a valid atom (Hydrogen) if other particles exist
+                if (currentProtons === 0 && (currentNeutrons > 0 || currentElectrons > 0)) {
+                    currentProtons = 1; // Default to Hydrogen if other particles exist but no protons
+                } else if (currentProtons === 0 && currentNeutrons === 0 && currentElectrons === 0) {
+                    // If all are zero, default to Hydrogen for a visible atom
+                    currentProtons = 1;
+                    currentElectrons = 1;
+                }
+
+                protonsInput.value = currentProtons;
+                neutronsInput.value = currentNeutrons;
+                electronsInput.value = currentElectrons;
+
+                // Identify the element
+                const element = periodicTable[currentProtons];
+                if (element) {
+                    elementNameOutput.textContent = `Elemento: ${element.name} (${element.symbol})`;
+                    if (currentElectrons !== currentProtons) {
+                        elementNameOutput.textContent += ` (Ion)`;
+                    }
+                } else {
+                    elementNameOutput.textContent = `Elemento: Desconocido`;
+                }
+
+                // --- Clear existing nucleus and electrons ---
+                // Remove existing nucleus group if it exists
+                if (nucleusGroup) {
+                    atomScene.remove(nucleusGroup);
+                    // Dispose geometries and materials to free up memory
+                    nucleusGroup.children.forEach(child => {
+                        if (child.geometry) child.geometry.dispose();
+                        if (child.material) child.material.dispose();
+                    });
+                    nucleusGroup.children.length = 0; // Clear children array
+                    nucleusGroup = null; // Clear reference
+                }
+
+                // Remove existing electron orbit groups and dispose their resources
+                electrons.forEach(electron => {
+                    if (electron.userData.parentGroup) {
+                        atomScene.remove(electron.userData.parentGroup);
+                        if (electron.geometry) electron.geometry.dispose();
+                        if (electron.material) electron.material.dispose();
+                        electron.userData.parentGroup.children.length = 0; // Clear children of orbit group
+                    }
+                });
+                electrons = []; // Clear the electrons array
+
+                // --- Recreate atom based on updated counts ---
+                // Create a group for the nucleus particles
+                nucleusGroup = new THREE.Group();
+                const nucleonRadius = 0.15;
+                // Adjust nucleus spread based on total nucleons
+                const totalNucleons = currentProtons + currentNeutrons;
+                const nucleusSpreadRadius = 0.4 + Math.min(0.8, totalNucleons * 0.005); 
+
+                // Add protons
+                const protonColor = 0xff0000; // Red
+                for (let i = 0; i < currentProtons; i++) {
+                    const proton = createNucleon(protonColor, nucleonRadius);
+                    // Position randomly within a sphere
+                    proton.position.set(
+                        (Math.random() - 0.5) * 2 * nucleusSpreadRadius,
+                        (Math.random() - 0.5) * 2 * nucleusSpreadRadius,
+                        (Math.random() - 0.5) * 2 * nucleusSpreadRadius
+                    );
+                    nucleusGroup.add(proton);
+                }
+
+                // Add neutrons
+                const neutronColor = 0x0000ff; // Blue
+                for (let i = 0; i < currentNeutrons; i++) {
+                    const neutron = createNucleon(neutronColor, nucleonRadius);
+                    neutron.position.set(
+                        (Math.random() - 0.5) * 2 * nucleusSpreadRadius,
+                        (Math.random() - 0.5) * 2 * nucleusSpreadRadius,
+                        (Math.random() - 0.5) * 2 * nucleusSpreadRadius
+                    );
+                    nucleusGroup.add(neutron);
+                }
+                atomScene.add(nucleusGroup);
+
+                // Electrons (simple spheres orbiting)
+                const electronMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff }); // Cyan for electrons
+                const electronGeometry = new THREE.SphereGeometry(0.05, 16, 16); // Even smaller electrons
+
+                // Define multiple shells for electrons (simplified Bohr-like model for visualization)
+                const shells = [
+                    { radius: 1.0, maxElectrons: 2 }, // K-shell
+                    { radius: 1.5, maxElectrons: 8 }, // L-shell
+                    { radius: 2.0, maxElectrons: 18 }, // M-shell
+                    { radius: 2.5, maxElectrons: 32 }, // N-shell
+                    { radius: 3.0, maxElectrons: 50 }, // O-shell
+                    { radius: 3.5, maxElectrons: 72 }  // P-shell (added more for heavier elements)
+                ];
+
+                let electronsAdded = 0;
+                shells.forEach(shell => {
+                    if (electronsAdded < currentElectrons) {
+                        const electronsInShell = Math.min(shell.maxElectrons, currentElectrons - electronsAdded);
+                        for (let i = 0; i < electronsInShell; i++) {
+                            const electron = new THREE.Mesh(electronGeometry, electronMaterial);
+                            
+                            // Create a group for each electron's orbit to allow individual plane rotation
+                            const orbitGroup = new THREE.Group();
+                            orbitGroup.add(electron);
+                            atomScene.add(orbitGroup);
+
+                            // Position electron on its orbit
+                            const angle = (i / electronsInShell) * Math.PI * 2;
+                            electron.position.x = shell.radius; // Start at radius on X-axis
+
+                            // Randomly rotate the orbit group to create different orbital planes
+                            orbitGroup.rotation.x = Math.random() * Math.PI;
+                            orbitGroup.rotation.y = Math.random() * Math.PI;
+                            orbitGroup.rotation.z = Math.random() * Math.PI;
+
+                            electron.userData.angle = angle;
+                            electron.userData.orbitRadius = shell.radius;
+                            electron.userData.speed = 0.02 + (Math.random() * 0.01); // Slightly varied speed
+                            electron.userData.parentGroup = orbitGroup; // Reference to its parent orbit group
+
+                            electrons.push(electron);
+                            electronsAdded++;
+                        }
+                    }
+                });
+
+                // Render the updated scene immediately
+                atomRenderer.render(atomScene, atomCamera);
+            }
+
+            function animateAtom() {
+                requestAnimationFrame(animateAtom);
+
+                // Animate electrons orbiting
+                electrons.forEach((electron) => {
+                    electron.userData.angle += electron.userData.speed;
+                    const orbitRadius = electron.userData.orbitRadius;
+
+                    // Update electron position relative to its parent orbitGroup
+                    electron.position.x = Math.cos(electron.userData.angle) * orbitRadius;
+                    electron.position.y = Math.sin(electron.userData.angle) * orbitRadius;
+                    electron.position.z = 0; // Electron stays in the XY plane of its parent orbitGroup
+                });
+
+                // Add a slight rotation to the overall nucleus group for visual appeal
+                if (nucleusGroup) {
+                    nucleusGroup.rotation.y += 0.005;
+                    nucleusGroup.rotation.x += 0.002;
+                }
+
+                // Add a slight rotation to the overall scene for electron groups
+                atomScene.rotation.y += 0.001; // Slower overall rotation for electrons
+                atomScene.rotation.x += 0.0005;
+
+                atomRenderer.render(atomScene, atomCamera);
+            }
+
+            // Initialize and animate the atom model when the window loads
+            window.addEventListener('load', () => {
+                if (atomCanvasContainer && atomCanvas) {
+                    initAtomModel();
+                    animateAtom();
+                }
+                populateElementList(); // Populate the element list on load
+            });
+
+            // Event listener for atom control button
+            if (updateAtomBtn) {
+                updateAtomBtn.addEventListener('click', updateAtomModel);
+            }
+
+            // Event listener for element list clicks
+            if (elementList) {
+                elementList.addEventListener('click', (event) => {
+                    const targetLi = event.target.closest('li');
+                    if (targetLi && targetLi.dataset.protons) {
+                        protonsInput.value = targetLi.dataset.protons;
+                        neutronsInput.value = targetLi.dataset.neutrons;
+                        electronsInput.value = targetLi.dataset.electrons;
+                        updateAtomModel();
+                    }
+                });
+            }
+
+            // --- AI Explainer (Gemini API Integration) ---
+            const conceptoInput = document.getElementById('concepto-nuclear-input');
+            const explicarBtn = document.getElementById('explicar-concepto-btn');
+            const loader = document.getElementById('ai-explanation-loader');
+            const outputDiv = document.getElementById('ai-explanation-output');
+            const errorDiv = document.getElementById('ai-explanation-error');
+
+            if (explicarBtn) {
+                explicarBtn.addEventListener('click', async () => {
+                    const prompt = conceptoInput.value.trim();
+                    if (!prompt) {
+                        outputDiv.classList.add('hidden');
+                        errorDiv.textContent = 'Por favor, introduce un concepto para explicar.';
+                        errorDiv.classList.remove('hidden');
+                        return;
+                    }
+
+                    loader.classList.remove('hidden');
+                    outputDiv.classList.add('hidden');
+                    errorDiv.classList.add('hidden');
+
+                    try {
+                        let chatHistory = [];
+                        chatHistory.push({ role: "user", parts: [{ text: `Explica de forma sencilla el concepto nuclear: "${prompt}". Enfócate en una explicación clara y concisa para un público general, sin usar jerga excesivamente técnica.` }] });
+                        const payload = { contents: chatHistory };
+                        const apiKey = ""; // Canvas will automatically provide the API key at runtime
+
+                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const result = await response.json();
+
+                        if (result.candidates && result.candidates.length > 0 &&
+                            result.candidates[0].content && result.candidates[0].content.parts &&
+                            result.candidates[0].content.parts.length > 0) {
+                            const text = result.candidates[0].content.parts[0].text;
+                            outputDiv.textContent = text;
+                            outputDiv.classList.remove('hidden');
+                        } else {
+                            errorDiv.textContent = 'No se pudo obtener una explicación. Intenta con otro concepto.';
+                            errorDiv.classList.remove('hidden');
+                            console.error('Unexpected API response structure:', result);
+                        }
+                    } catch (e) {
+                        errorDiv.textContent = 'Error al conectar con el asistente de IA. Por favor, inténtalo de nuevo más tarde.';
+                        errorDiv.classList.remove('hidden');
+                        console.error('API call failed:', e);
+                    } finally {
+                        loader.classList.add('hidden');
+                    }
+                });
+            }
+
+            // --- Publications Searcher (Interaction Guide) ---
+            const investigacionQueryInput = document.getElementById('investigacion-query-input');
+            const buscarInvestigacionBtn = document.getElementById('buscar-investigacion-btn');
+
+            if (buscarInvestigacionBtn) {
+                buscarInvestigacionBtn.addEventListener('click', async () => {
+                    const query = investigacionQueryInput.value.trim();
+                    if (!query) {
+                        showMessageBox('Por favor, introduce una consulta para buscar.');
+                        return;
+                    }
+
+                    // Copy query to clipboard and instruct user
+                    try {
+                        // Using document.execCommand('copy') as navigator.clipboard.writeText() might not work in some iframe environments
+                        const tempInput = document.createElement('textarea');
+                        tempInput.value = `Busca en Google Scholar: ${query}`;
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+
+                        showMessageBox(`"${query}" ha sido copiado a tu portapapeles. Por favor, pégalo en el chat para que el asistente de IA realice la búsqueda y te muestre los resultados.`);
+                    } catch (err) {
+                        console.error('Failed to copy text: ', err);
+                        showMessageBox(`No se pudo copiar la consulta automáticamente. Por favor, copia manualmente: "Busca en Google Scholar: ${query}" y pégalo en el chat para que el asistente de IA realice la búsqueda.`);
+                    }
+                });
+            }
+
+            // --- Isotope Simulation ---
+            const isotopeCanvasContainer = document.getElementById('isotope-canvas-container');
+            const isotopeCanvas = document.getElementById('isotope-canvas');
+            let isotopeScene, isotopeCamera, isotopeRenderer;
+            let isotopeAnimationId; // To store animation frame ID for cancellation
+            let currentIsotopes = [];
+            let currentApplication = null; // 'medical', 'agricultural', 'mining'
+            let targetOrgan; // For medical simulation
+            let plantMesh; // For agricultural simulation
+            let rockMesh; // For mining simulation
+            let mineralVeins = []; // For mining simulation
+
+            const medicalIsotopeBtn = document.getElementById('medical-isotope-btn');
+            const agriculturalIsotopeBtn = document.getElementById('agricultural-isotope-btn');
+            const miningIsotopeBtn = document.getElementById('mining-isotope-btn');
+            const isotopeScenarioText = document.getElementById('isotope-scenario-text');
+
+            function initIsotopeSimulation() {
+                isotopeScene = new THREE.Scene();
+                isotopeCamera = new THREE.PerspectiveCamera(75, isotopeCanvasContainer.clientWidth / isotopeCanvasContainer.clientHeight, 0.1, 1000);
+                isotopeCamera.position.z = 3;
+
+                isotopeRenderer = new THREE.WebGLRenderer({ canvas: isotopeCanvas, antialias: true, alpha: true });
+                isotopeRenderer.setSize(isotopeCanvasContainer.clientWidth, isotopeCanvasContainer.clientHeight);
+                isotopeRenderer.setPixelRatio(window.devicePixelRatio);
+                isotopeRenderer.setClearColor(0x000000, 0); // Transparent background
+
+                const ambientLight = new THREE.AmbientLight(0x404040);
+                isotopeScene.add(ambientLight);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+                directionalLight.position.set(1, 1, 1).normalize();
+                isotopeScene.add(directionalLight);
+
+                window.addEventListener('resize', onIsotopeWindowResize);
+            }
+
+            function onIsotopeWindowResize() {
+                isotopeCamera.aspect = isotopeCanvasContainer.clientWidth / isotopeCanvasContainer.clientHeight;
+                isotopeCamera.updateProjectionMatrix();
+                isotopeRenderer.setSize(isotopeCanvasContainer.clientWidth, isotopeCanvasContainer.clientHeight);
+            }
+
+            function disposeThreeObject(obj) {
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) {
+                    if (Array.isArray(obj.material)) {
+                        obj.material.forEach(m => m.dispose());
+                    } else {
+                        obj.material.dispose();
+                    }
+                }
+                if (obj.children) {
+                    obj.children.forEach(child => disposeThreeObject(child));
+                }
+            }
+
+            function clearIsotopeScene() {
+                if (isotopeAnimationId) {
+                    cancelAnimationFrame(isotopeAnimationId);
+                }
+                while(isotopeScene.children.length > 0){ 
+                    const object = isotopeScene.children[0];
+                    isotopeScene.remove(object);
+                    disposeThreeObject(object); // Dispose resources
+                }
+                currentIsotopes = [];
+                targetOrgan = null;
+                plantMesh = null;
+                rockMesh = null;
+                mineralVeins = [];
+            }
+
+            function createIsotopeParticle(color) {
+                const geometry = new THREE.SphereGeometry(0.05, 16, 16);
+                const material = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.9 });
+                return new THREE.Mesh(geometry, material);
+            }
+
+            function animateIsotopeSimulation() {
+                isotopeAnimationId = requestAnimationFrame(animateIsotopeSimulation);
+
+                currentIsotopes.forEach(isotope => {
+                    if (currentApplication === 'medical') {
+                        // Move isotopes along a circular path
+                        isotope.userData.angle = (isotope.userData.angle + isotope.userData.speed) % (Math.PI * 2);
+                        const radius = isotope.userData.radius;
+                        isotope.position.x = Math.cos(isotope.userData.angle) * radius;
+                        isotope.position.y = Math.sin(isotope.userData.angle) * radius;
+                        isotope.position.z = Math.sin(isotope.userData.angle * 2 + isotope.userData.offset) * 0.2; // Slight Z variation
+
+                        // Check proximity to target organ and make it glow
+                        if (targetOrgan) {
+                            const distance = isotope.position.distanceTo(targetOrgan.position);
+                            const maxDistance = 1.0; // Distance at which glow starts
+                            if (distance < maxDistance) {
+                                const glowFactor = 1 - (distance / maxDistance);
+                                targetOrgan.material.emissiveIntensity = glowFactor * 0.5; // Make it glow
+                            } else {
+                                targetOrgan.material.emissiveIntensity = 0;
+                            }
+                        }
+
+                    } else if (currentApplication === 'agricultural') {
+                        // Agricultural: move towards the plant base and up the stem
+                        if (isotope.userData.phase === 'soil') {
+                            isotope.position.y += isotope.userData.speed;
+                            if (isotope.position.y >= -0.5) { // Reached plant base
+                                isotope.userData.phase = 'stem';
+                                isotope.userData.speed = 0.005 + Math.random() * 0.002; // Slower up stem
+                            }
+                        } else if (isotope.userData.phase === 'stem') {
+                            isotope.position.y += isotope.userData.speed;
+                            if (isotope.position.y > 0.5) { // Reached top of plant
+                                isotope.position.y = -1.5; // Reset to soil
+                                isotope.position.x = (Math.random() - 0.5) * 1.5;
+                                isotope.position.z = (Math.random() - 0.5) * 0.5;
+                                isotope.userData.phase = 'soil';
+                                isotope.userData.speed = 0.01 + Math.random() * 0.005; // Faster in soil
+                            }
+                            // Make plant grow slightly
+                            if (plantMesh) {
+                                plantMesh.scale.y = 1 + Math.sin(Date.now() * 0.001) * 0.05; // Simple pulsating growth
+                            }
+                        }
+                    } else if (currentApplication === 'mining') {
+                        // Mining: isotopes travel and highlight veins
+                        isotope.position.x += isotope.userData.direction.x * isotope.userData.speed;
+                        isotope.position.y += isotope.userData.direction.y * isotope.userData.speed;
+                        isotope.position.z += isotope.userData.direction.z * isotope.userData.speed;
+
+                        // Check if isotope hits a mineral vein
+                        mineralVeins.forEach(vein => {
+                            const distance = isotope.position.distanceTo(vein.position);
+                            if (distance < 0.2) { // Proximity detection
+                                vein.material.emissiveIntensity = 1; // Make vein glow brightly
+                                vein.material.emissive.setHex(0xFFD700); // Gold color
+                                setTimeout(() => {
+                                    vein.material.emissiveIntensity = 0; // Fade out glow
+                                }, 500);
+                            }
+                        });
+
+                        // Reset isotope if it goes too far
+                        if (isotope.position.length() > 3) {
+                            isotope.position.set((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2);
+                            isotope.userData.direction = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+                        }
+                    }
+                });
+
+                isotopeRenderer.render(isotopeScene, isotopeCamera);
+            }
+
+            function loadMedicalApplication() {
+                clearIsotopeScene();
+                currentApplication = 'medical';
+                isotopeScenarioText.textContent = "Simulación: Aplicación Médica - Trazadores radiactivos en el sistema circulatorio para diagnóstico o terapia. Los isótopos (esferas verdes) viajan a través de vasos sanguíneos (cilindros rojos) y se acumulan en un órgano objetivo (esfera pulsante).";
+
+                // Blood vessel network (simplified)
+                const vesselMaterial = new THREE.MeshBasicMaterial({ color: 0x880000, transparent: true, opacity: 0.4 });
+                const vesselRadius = 0.05;
+
+                // Main vessel loop
+                const pathPoints = [
+                    new THREE.Vector3(-1, 0, 0),
+                    new THREE.Vector3(-0.5, 1, 0),
+                    new THREE.Vector3(0.5, 1, 0),
+                    new THREE.Vector3(1, 0, 0),
+                    new THREE.Vector3(0.5, -1, 0),
+                    new THREE.Vector3(-0.5, -1, 0),
+                    new THREE.Vector3(-1, 0, 0)
+                ];
+                const curve = new THREE.CatmullRomCurve3(pathPoints);
+                const tubeGeometry = new THREE.TubeGeometry(curve, 64, vesselRadius, 8, false);
+                const vessel = new THREE.Mesh(tubeGeometry, vesselMaterial);
+                isotopeScene.add(vessel);
+
+                // Target organ (pulsating sphere)
+                const targetGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+                const targetMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0 });
+                targetOrgan = new THREE.Mesh(targetGeometry, targetMaterial);
+                targetOrgan.position.set(0.2, 0.2, 0); // Position within the vessel loop
+                isotopeScene.add(targetOrgan);
+
+                // Add isotope particles
+                for (let i = 0; i < 20; i++) {
+                    const isotope = createIsotopeParticle(0x00ff00); // Green for medical
+                    isotope.userData.speed = 0.05 + Math.random() * 0.02;
+                    isotope.userData.angle = Math.random() * Math.PI * 2;
+                    isotope.userData.radius = 0.8 + Math.random() * 0.1; // Varying radii
+                    isotope.userData.offset = Math.random() * Math.PI * 2; // Varying z-offset phase
+                    currentIsotopes.push(isotope);
+                    isotopeScene.add(isotope);
+                }
+                animateIsotopeSimulation();
+            }
+
+            function loadAgriculturalApplication() {
+                clearIsotopeScene();
+                currentApplication = 'agricultural';
+                isotopeScenarioText.textContent = "Simulación: Aplicación Agrícola - Isótopos (esferas amarillas) trazando la absorción de nutrientes desde el suelo por una planta, mostrando cómo se distribuyen en sus raíces y tallo.";
+
+                // Soil plane
+                const soilGeometry = new THREE.PlaneGeometry(3, 2);
+                const soilTexture = new THREE.TextureLoader().load('https://placehold.co/200x200/8B4513/5A2D0C?text=Soil');
+                const soilMaterial = new THREE.MeshBasicMaterial({ map: soilTexture, side: THREE.DoubleSide });
+                const soil = new THREE.Mesh(soilGeometry, soilMaterial);
+                soil.rotation.x = -Math.PI / 2;
+                soil.position.y = -1;
+                isotopeScene.add(soil);
+
+                // Detailed Plant
+                const stemGeometry = new THREE.CylinderGeometry(0.08, 0.15, 1.5, 16);
+                const stemMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 }); // Dark Green
+                plantMesh = new THREE.Mesh(stemGeometry, stemMaterial);
+                plantMesh.position.y = -0.25; // Base in soil
+                isotopeScene.add(plantMesh);
+
+                // Leaves
+                const leafShape = new THREE.Shape();
+                leafShape.moveTo(0, 0);
+                leafShape.bezierCurveTo(0.1, 0.05, 0.1, 0.2, 0, 0.25);
+                leafShape.bezierCurveTo(-0.1, 0.2, -0.1, 0.05, 0, 0);
+                const leafGeometry = new THREE.ShapeGeometry(leafShape);
+                const leafMaterial = new THREE.MeshLambertMaterial({ color: 0x32CD32, side: THREE.DoubleSide });
+
+                const numLeaves = 5;
+                for (let i = 0; i < numLeaves; i++) {
+                    const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                    leaf.position.set(0, 0.2 + i * 0.15, 0);
+                    leaf.rotation.z = Math.PI / 2 * i; // Rotate leaves around stem
+                    leaf.scale.set(0.8, 0.8, 0.8);
+                    plantMesh.add(leaf);
+                }
+
+                // Roots (simplified)
+                const rootMaterial = new THREE.MeshBasicMaterial({ color: 0x5A2D0C });
+                const rootGeometry = new THREE.CylinderGeometry(0.03, 0.01, 0.5, 8);
+                for (let i = 0; i < 5; i++) {
+                    const root = new THREE.Mesh(rootGeometry, rootMaterial);
+                    root.position.set((Math.random() - 0.5) * 0.5, -1.0 - Math.random() * 0.5, (Math.random() - 0.5) * 0.2);
+                    root.rotation.z = Math.random() * Math.PI;
+                    isotopeScene.add(root);
+                }
+
+
+                // Add isotope particles
+                for (let i = 0; i < 25; i++) {
+                    const isotope = createIsotopeParticle(0xFFFF00); // Yellow for agricultural
+                    isotope.position.set((Math.random() - 0.5) * 1.5, -1.5 - Math.random() * 0.5, (Math.random() - 0.5) * 0.5);
+                    isotope.userData.speed = 0.01 + Math.random() * 0.005;
+                    isotope.userData.phase = 'soil'; // 'soil' -> 'stem'
+                    currentIsotopes.push(isotope);
+                    isotopeScene.add(isotope);
+                }
+                animateIsotopeSimulation();
+            }
+
+            function loadMiningApplication() {
+                clearIsotopeScene();
+                currentApplication = 'mining';
+                isotopeScenarioText.textContent = "Simulación: Aplicación Minera - Isótopos (esferas naranjas) penetran una formación rocosa (poliedro) para detectar depósitos minerales (venas que brillan al ser detectadas).";
+
+                // Complex Rock Formation
+                const rockGeometry = new THREE.IcosahedronGeometry(1.5, 1); // A more organic rock shape
+                const rockTexture = new THREE.TextureLoader().load('https://placehold.co/200x200/555555/333333?text=Rock');
+                const rockMaterial = new THREE.MeshBasicMaterial({ map: rockTexture, wireframe: false, transparent: true, opacity: 0.6 });
+                rockMesh = new THREE.Mesh(rockGeometry, rockMaterial);
+                isotopeScene.add(rockMesh);
+
+                // Mineral veins (cylinders inside the rock)
+                const veinMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD700, emissive: 0xFFD700, emissiveIntensity: 0 }); // Gold, initially not glowing
+                const veinGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5, 8);
+
+                const numVeins = 5;
+                for (let i = 0; i < numVeins; i++) {
+                    const vein = new THREE.Mesh(veinGeometry, veinMaterial.clone());
+                    vein.position.set(
+                        (Math.random() - 0.5) * 1.5,
+                        (Math.random() - 0.5) * 1.0,
+                        (Math.random() - 0.5) * 1.0
+                    );
+                    vein.rotation.x = Math.random() * Math.PI;
+                    vein.rotation.y = Math.random() * Math.PI;
+                    rockMesh.add(vein); // Add veins as children of the rock
+                    mineralVeins.push(vein);
+                }
+
+                // Add isotope particles
+                for (let i = 0; i < 30; i++) {
+                    const isotope = createIsotopeParticle(0xFF8C00); // Orange for mining
+                    isotope.position.set((Math.random() - 0.5) * 2.5, (Math.random() - 0.5) * 2.5, (Math.random() - 0.5) * 2.5);
+                    isotope.userData.speed = 0.03 + Math.random() * 0.01;
+                    isotope.userData.direction = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+                    currentIsotopes.push(isotope);
+                    isotopeScene.add(isotope);
+                }
+                
+                animateIsotopeSimulation();
+            }
+
+            // Isotope simulation button event listeners
+            if (medicalIsotopeBtn) medicalIsotopeBtn.addEventListener('click', loadMedicalApplication);
+            if (agriculturalIsotopeBtn) agriculturalIsotopeBtn.addEventListener('click', loadAgriculturalApplication);
+            if (miningIsotopeBtn) miningIsotopeBtn.addEventListener('click', loadMiningApplication);
+
+            // Initialize isotope simulation on window load
+            window.addEventListener('load', () => {
+                initIsotopeSimulation();
+            });
+        });
+    </script>
+</body>
+</html>
