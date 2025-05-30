@@ -1197,6 +1197,7 @@
             const investigacionQueryInput = document.getElementById('investigacion-query-input');
             const buscarInvestigacionBtn = document.getElementById('buscar-investigacion-btn');
 
+            // ...existing code...
             if (buscarInvestigacionBtn) {
                 buscarInvestigacionBtn.addEventListener('click', async () => {
                     const query = investigacionQueryInput.value.trim();
@@ -1204,24 +1205,37 @@
                         showMessageBox('Por favor, introduce una consulta para buscar.');
                         return;
                     }
+                    // Mostrar mensaje de cargando
+                    document.getElementById('investigacion-results-output').innerHTML =
+                        '<p class="text-gray-400 text-sm">Buscando...</p>';
 
-                    // Copy query to clipboard and instruct user
                     try {
-                        // Using document.execCommand('copy') as navigator.clipboard.writeText() might not work in some iframe environments
-                        const tempInput = document.createElement('textarea');
-                        tempInput.value = `Busca en Google Scholar: ${query}`;
-                        document.body.appendChild(tempInput);
-                        tempInput.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(tempInput);
-
-                        showMessageBox(`"${query}" ha sido copiado a tu portapapeles. Por favor, pégalo en el chat para que el asistente de IA realice la búsqueda y te muestre los resultados.`);
-                    } catch (err) {
-                        console.error('Failed to copy text: ', err);
-                        showMessageBox(`No se pudo copiar la consulta automáticamente. Por favor, copia manualmente: "Busca en Google Scholar: ${query}" y pégalo en el chat para que el asistente de IA realice la búsqueda.`);
+                        const response = await fetch('https://api.openalex.org/works?search=' + encodeURIComponent(query));
+                        const data = await response.json();
+                        let html = '';
+                        if (data.results && data.results.length > 0) {
+                            data.results.forEach(work => {
+                                const title = work.display_name || work.title || 'Sin título';
+                                const publicationDate = work.publication_date ? work.publication_date : 'Fecha desconocida';
+                                const workUrl = work.url || work.id;
+                                html += `
+                                    <div class="bg-gray-800 p-3 rounded-md">
+                                        <h3 class="font-bold text-sky-300">${title}</h3>
+                                        <p class="text-gray-300 text-sm">Publicado: ${publicationDate}</p>
+                                        <a href="${workUrl}" target="_blank" class="text-sky-400 hover:underline text-sm">Ver publicación</a>
+                                    </div>
+                                `;
+                            });
+                        } else {
+                            html = '<p class="text-gray-400 text-sm">No se encontraron resultados.</p>';
+                        }
+                        document.getElementById('investigacion-results-output').innerHTML = html;
+                    } catch (error) {
+                        showMessageBox('Error al buscar investigaciones: ' + error.message);
                     }
                 });
             }
+            // ...existing code...
 
             // --- Isotope Simulation ---
             const isotopeCanvasContainer = document.getElementById('isotope-canvas-container');
@@ -1532,6 +1546,7 @@
             // Initialize isotope simulation on window load
             window.addEventListener('load', () => {
                 initIsotopeSimulation();
+                loadMedicalApplication();
             });
         });
     </script>
